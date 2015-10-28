@@ -49,6 +49,7 @@ module WParser ( parse,
     keyword "if"
     cond <- parens expr 
     thenstmt <- stmt
+    keyword "else"
     elsestmt <- stmt
     return $ If cond thenstmt elsestmt
 
@@ -66,7 +67,7 @@ module WParser ( parse,
 
   -- the only kind of expression supported for now is stringLiterals
   -- implement the full expression language of W
-  --
+  
   -- expr = stringLiteral 
 
   expr = term >>= termSeq
@@ -76,7 +77,6 @@ module WParser ( parse,
             right <- term
             termSeq (op left right)
       ) +++ return left
-
   term = factor >>= factorSeq
   factorSeq left =
       ( do 
@@ -85,8 +85,48 @@ module WParser ( parse,
             factorSeq (op left right)
       ) +++ return left
 
-  factor = (nat >>= \n -> return $ Val (VInt n))
-    +++ stringLiteral +++ parens expr
+  factor = andor >>= andorSeq
+  andorSeq left = 
+    (
+        do
+            op <- (symbol "&&" >> return And) +++ (symbol "||" >> return Or)
+            right <- andor
+            andorSeq (op left right)
+    ) +++ return left
+
+  andor = notexpr 
+  notexpr = 
+      ( do
+            op <- (symbol "!" >> return Not) 
+            right <- notexpr
+            return (op right)
+      ) +++ equality >>= equalitySeq
+
+  -- notexpr = equality >>= equalitySeq
+  equalitySeq left =
+      ( do
+            op <- (symbol "==" >> return Equals) +++ (symbol "!=" >> return NotEqual) 
+              +++ (symbol ">" >> return Greater) +++ (symbol "<" >> return Less)
+                +++ (symbol ">=" >> return GreaterOrEqual) +++ (symbol "<=" >> return LessOrEqual) 
+            right <- equality
+            equalitySeq (op left right)       
+      ) +++ return left 
+
+  equality = booleanLiteral +++ (nat >>= \n -> return $ Val (VInt n)) +++ stringLiteral +++ parens expr +++ (identifier >>= \id -> return $ Var id) 
+
+  booleanLiteral = (symbol "true" >> ( return $ Val (VBool True ))) +++ (symbol "false" >> ( return $ Val (VBool False )))
+
+  {--
+  expr = equality >>= equalitySeq
+  equalitySeq left =
+      ( do
+            op <- (symbol "==" >> return Equals) +++ (symbol "!=" >> return NotEqual)
+            right <- equality
+            equalitySeq (op left right)       
+      )
+  --}
+
+  -- factor = (nat >>= \n -> return $ Val (VInt n)) +++ stringLiteral +++ parens expr +++ (identifier >>= \id -> return $ Var id)
 
   -- stringLiterals can contain \n characters
   stringLiteral = do char ('"') 
