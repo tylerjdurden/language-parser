@@ -105,29 +105,22 @@ module WParser ( parse,
   -- notexpr = equality >>= equalitySeq
   equalitySeq left =
       ( do
-            op <- (symbol "==" >> return Equals) +++ (symbol "!=" >> return NotEqual) 
-              +++ (symbol ">" >> return Greater) +++ (symbol "<" >> return Less)
-                +++ (symbol ">=" >> return GreaterOrEqual) +++ (symbol "<=" >> return LessOrEqual) 
+            op <-                                    (symbol "==" >> return Equals)
+                                                 +++ (symbol "!=" >> return NotEqual)
+                                                 +++ (symbol ">=" >> return GreaterOrEqual)
+                                                 +++ (symbol "<=" >> return LessOrEqual)
+                                                 +++ (symbol ">"  >> return Greater)
+                                                 +++ (symbol "<"  >> return Less)
             right <- equality
             equalitySeq (op left right)       
       ) +++ return left 
 
   equality = booleanLiteral +++ (nat >>= \n -> return $ Val (VInt n)) +++ stringLiteral +++ parens expr +++ (identifier >>= \id -> return $ Var id) 
 
+  -- boolean literals are true or false
   booleanLiteral = (symbol "true" >> ( return $ Val (VBool True ))) +++ (symbol "false" >> ( return $ Val (VBool False )))
 
-  {--
-  expr = equality >>= equalitySeq
-  equalitySeq left =
-      ( do
-            op <- (symbol "==" >> return Equals) +++ (symbol "!=" >> return NotEqual)
-            right <- equality
-            equalitySeq (op left right)       
-      )
-  --}
-
-  -- factor = (nat >>= \n -> return $ Val (VInt n)) +++ stringLiteral +++ parens expr +++ (identifier >>= \id -> return $ Var id)
-
+  
   -- stringLiterals can contain \n characters
   stringLiteral = do char ('"') 
                      s <- many stringChar
