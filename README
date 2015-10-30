@@ -1,1 +1,7 @@
-CSCE 314 Assignment 5 (Parser)
+This is a parser for a programming language I wrote. The language is called w. It is written in Haskell. It contains while loops (hence its name) which Haskell does not! Try it out if you like.
+
+To compile:
+    ghc Main.hs -o w
+
+To run a program (.w file)
+    ./w filename.w
